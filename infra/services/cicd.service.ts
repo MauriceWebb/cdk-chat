@@ -52,7 +52,8 @@ export class AmplifyCICDService extends cdk.Construct {
       },
     };
 
-    const amplifyCICD = new amplify.App(this, `${id}-AmplifyCICD`, {
+    const amplifyCICD = new amplify.App(this, `Pipeline`, {
+      appName: `${id}Pipeline`,
       sourceCodeProvider: new amplify.GitHubSourceCodeProvider({
         owner: props?.GitHubUsername || '',
         repository: props?.GitHubRepoName || '',
