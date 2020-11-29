@@ -9,7 +9,9 @@ interface AmplifyCICDServiceProps extends cdk.StackProps {
     SecretName: string;
     SecretKey?: string;
   };
+  FrontendProjectDirectory?: string;
   FrontendBaseDirectory?: string;
+  FrontendBuildCommand?: string;
 }
 
 export class AmplifyCICDService extends cdk.Construct {
@@ -19,6 +21,36 @@ export class AmplifyCICDService extends cdk.Construct {
     props?: AmplifyCICDServiceProps
   ) {
     super(scope, id);
+
+    const buildSpecs = {
+      version: 1,
+      frontend: {
+        phases: {
+          preBuild: {
+            commands: props?.FrontendProjectDirectory
+              ? ['ls', `cd ${props.FrontendProjectDirectory}`, 'npm ci']
+              : ['npm ci'],
+          },
+          build: {
+            commands: [
+              `npm run ${
+                props?.FrontendBuildCommand
+                  ? props.FrontendBuildCommand
+                  : 'build'
+              }`,
+              'ls'
+            ],
+          },
+        },
+        artifacts: {
+          baseDirectory: props?.FrontendBaseDirectory || 'public',
+          files: ['**/*'],
+        },
+        cache: {
+          paths: ['node_modules/**/*'],
+        },
+      },
+    };
 
     const amplifyCICD = new amplify.App(this, `${id}-AmplifyCICD`, {
       sourceCodeProvider: new amplify.GitHubSourceCodeProvider({
@@ -30,22 +62,7 @@ export class AmplifyCICDService extends cdk.Construct {
             })
           : cdk.SecretValue.secretsManager(props?.GitHubPATSM.SecretName || ''),
       }),
-      buildSpec: codebuild.BuildSpec.fromObject({
-        version: 1,
-        frontend: {
-          phases: {
-            preBuild: { commands: ['npm ci'] },
-            build: { commands: ['npm run build'] },
-          },
-          artifacts: {
-            baseDirectory: props?.FrontendBaseDirectory || 'public',
-            files: ['**/*'],
-          },
-          cache: {
-            paths: ['node_modules/**/*'],
-          },
-        },
-      }),
+      buildSpec: codebuild.BuildSpec.fromObject(buildSpecs),
     });
 
     // add branches to cicd:

@@ -13,6 +13,9 @@ export class InfraStack extends cdk.Stack {
         SecretName: 'global/gitHubPAT',
         SecretKey: 'gitHubPAT',
       },
+      FrontendProjectDirectory: 'client',
+      FrontendBaseDirectory: 'client/public',
+      FrontendBuildCommand: 'build'
     });
   }
 }
